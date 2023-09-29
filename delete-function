@@ -1,0 +1,33 @@
+const AWS = require('aws-sdk');
+const dynamodb = new AWS.DynamoDB.DocumentClient();
+
+exports.handler = async (event) => {
+    try {
+        const id = event.pathParameters.id;
+        const params = {
+            TableName: process.env.TABLE_NAME,
+            Key: { id },
+            ReturnValues: 'ALL_OLD'
+        };
+
+        const result = await dynamodb.delete(params).promise();
+
+        if (!result.Attributes) {
+            return {
+                statusCode: 404,
+                body: JSON.stringify({ message: 'Item not found' })
+            };
+        }
+
+        return {
+            statusCode: 200,
+            body: JSON.stringify({ message: 'Item deleted successfully', deletedItem: result.Attributes })
+        };
+    } catch (error) {
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ message: 'Error deleting item', error: error })
+        };
+    }
+};
+

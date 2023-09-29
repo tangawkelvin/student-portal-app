@@ -1,0 +1,95 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: SAM template for an API Gateway with CRUD operations on a DynamoDB table.
+
+Globals:
+  Function:
+    Runtime: nodejs14.x
+    Handler: index.handler
+    Role: !GetAtt LambdaExecutionRole.Arn
+    Environment:
+      Variables:
+        TABLE_NAME: !Ref MyDynamoDBTable
+
+Resources:
+  # DynamoDB Table Definition
+  MyDynamoDBTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: MyTableName
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  LambdaExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+
+  # Lambda Functions
+  CreateFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: CreateFunction
+      CodeUri: ./lambda/create
+      Events:
+        CreateApi:
+          Type: Api
+          Properties:
+            Path: /create
+            Method: POST
+
+  ReadFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: ReadFunction
+      CodeUri: ./lambda/read
+      Events:
+        ReadApi:
+          Type: Api
+          Properties:
+            Path: /read/{id}
+            Method: GET
+
+  UpdateFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: UpdateFunction
+      CodeUri: ./lambda/update
+      Events:
+        UpdateApi:
+          Type: Api
+          Properties:
+            Path: /update/{id}
+            Method: PUT
+
+  DeleteFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: DeleteFunction
+      CodeUri: ./lambda/delete
+      Events:
+        DeleteApi:
+          Type: Api
+          Properties:
+            Path: /delete/{id}
+            Method: DELETE
+
+# Output and other sections can remain the same.
+
